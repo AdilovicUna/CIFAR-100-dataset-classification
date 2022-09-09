@@ -3,3 +3,4 @@ cifar-100-python/
 models/
 pca/
 plots/
+*.txt

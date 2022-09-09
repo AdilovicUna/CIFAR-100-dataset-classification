@@ -21,6 +21,6 @@ def show_results(test_data, test_target, prediction, model, filename):
 
     ax.set_title('Precision-Recall Curve')
     ax.set_ylabel('Precision')
-    ax.set_xlabel('Recall')cd 
+    ax.set_xlabel('Recall')
 
     plt.savefig('plots/' + filename + ".png")

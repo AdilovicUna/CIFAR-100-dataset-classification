@@ -32,9 +32,11 @@ def main(test):
     if not test:
         train_data, train_target = dataset.train_data, dataset.train_target
 
+        # normalize the data and preform the dimensionality reduction
         sc = StandardScaler()
-        train_data = sc.fit_transform(train_data)
         pca = PCA(n_components=0.95)
+
+        train_data = sc.fit_transform(train_data)
         train_data = pca.fit_transform(train_data)
 
         with lzma.open('pca/' + filename, "wb") as transform:
@@ -53,13 +55,14 @@ def main(test):
     else:
         test_data, test_target = dataset.test_data, dataset.test_target
 
+        # normalize the data and preform the dimensionality reduction (using the PCA that was fitted during training)
         sc = StandardScaler()
         test_data = sc.fit_transform(test_data)
 
-        # Load the PCA and reduce dimensiality of testing data
         with lzma.open('pca/' + filename, "rb") as transform:
             pca = pickle.load(transform)
-            test_data = pca.transform(test_data)
+        
+        test_data = pca.transform(test_data)
 
         with lzma.open('models/' + filename + '.model', "rb") as model_file:
             model = pickle.load(model_file)
