@@ -1,13 +1,16 @@
 import lzma
 import pickle
+from statistics import mode
 import sys
 import os
 
 import numpy as np
 
-from LoadDataset  import CIFAR100
+from LoadDataset import CIFAR100
+from Results import show_results
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
+
 
 def cross_validation(data, target):
     best_k = 1
@@ -22,6 +25,7 @@ def cross_validation(data, target):
 
 def main(test):
     dataset = CIFAR100(['aquatic_mammals', 'non-insect_invertebrates'])
+    filename = 'bin_class_knn'
 
     # Train the model
     if not test:
@@ -35,18 +39,19 @@ def main(test):
         model = knn.fit(train_data, train_target)
 
         # serialize the model
-        with lzma.open('models/bin_class_knn.model', "wb") as model_file:
+        with lzma.open('models/' + filename + '.model', "wb") as model_file:
             pickle.dump(model, model_file)
 
     # Test
     else:
         test_data, test_target = dataset.test_data, dataset.test_target
 
-        with lzma.open('models/buin_class_knn.model', "rb") as model_file:
+        with lzma.open('models/' + filename + '.model', "rb") as model_file:
             model = pickle.load(model_file)
 
         prediction = model.predict(test_data)
 
+        show_results(test_data, test_target, prediction, model, filename)
 
 if __name__ == "__main__":
 
@@ -54,7 +59,12 @@ if __name__ == "__main__":
     path = 'models'
     if not os.path.exists(path):
         os.makedirs(path)
-    
+
+    # create a directory for the plots
+    path = 'plots'
+    if not os.path.exists(path):
+        os.makedirs(path)
+        
     # determine if we have to train the model or test it
     test = False
     if len(sys.argv) > 1 and sys.argv[1] == "--test":

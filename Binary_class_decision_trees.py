@@ -6,51 +6,61 @@ import os
 import numpy as np
 
 from LoadDataset  import CIFAR100
-from sklearn.neighbors import KNeighborsClassifier
+from Results import show_results
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_val_score
 
 def cross_validation(data, target):
-    best_k = 1
+    depth = 1
     best_mean = -1
-    for k in range (1,11):
-        mean = np.mean(cross_val_score(KNeighborsClassifier(k), data, target, cv=5))
+    for d in range (3,21):
+        mean = np.mean(cross_val_score(DecisionTreeClassifier(max_depth=d), data, target, cv=7))
         if mean > best_mean:
             best_mean = mean
-            best_k = k
+            depth = d
     
-    return best_k
+    return depth
 
 def main(test):
     dataset = CIFAR100(['aquatic_mammals', 'non-insect_invertebrates'])
+    filename = 'bin_class_decision_trees'
 
     # Train the model
     if not test:
         train_data, train_target = dataset.train_data, dataset.train_target
 
         # find the best suitable k using cross_validation
-        k = cross_validation(train_data, train_target)
+        d = cross_validation(train_data, train_target)
 
-        # train the model using KNeighborsClassifier
-        knn = KNeighborsClassifier(k)
-        model = knn.fit(train_data, train_target)
+        # train the model using DecisionTreeClassifier
+        dt = DecisionTreeClassifier(max_depth=d)
+        model = dt.fit(train_data, train_target)
 
         # serialize the model
-        with lzma.open('models/bin_class_knn.model', "wb") as model_file:
+        with lzma.open('models/' + filename + '.model', "wb") as model_file:
             pickle.dump(model, model_file)
 
     # Test
     else:
         test_data, test_target = dataset.test_data, dataset.test_target
 
-        with lzma.open('models/buin_class_knn.model', "rb") as model_file:
+        with lzma.open('models/' + filename + '.model', "rb") as model_file:
             model = pickle.load(model_file)
 
         prediction = model.predict(test_data)
+        
+        show_results(test_data, test_target, prediction, model, filename)
+
 
 if __name__ == "__main__":
 
     # create a directory for the models
     path = 'models'
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # create a directory for the plots
+    path = 'plots'
     if not os.path.exists(path):
         os.makedirs(path)
     

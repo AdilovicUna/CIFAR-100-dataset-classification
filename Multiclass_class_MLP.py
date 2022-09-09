@@ -7,9 +7,8 @@ import numpy as np
 
 from LoadDataset  import CIFAR100
 from Results import show_results
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import GridSearchCV
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -18,7 +17,7 @@ def cross_validation(data, target):
     depth = 1
     best_mean = -1
     for d in range (3,11):
-        mean = np.mean(cross_val_score(DecisionTreeClassifier(max_depth=d), data, target, cv=7))
+        mean = np.mean(cross_val_score(MLPClassifier(max_iter=d), data, target, cv=7))
         if mean > best_mean:
             best_mean = mean    
             depth = d
@@ -27,7 +26,7 @@ def cross_validation(data, target):
 
 def main(test):
     dataset = CIFAR100(['bottle', 'bowl', 'can', 'cup', 'plate'], coarse=False)
-    filename = 'multi_class_decision_trees'
+    filename = 'multi_class_mlp'
 
     # Train the model
     if not test:
@@ -41,18 +40,10 @@ def main(test):
         with lzma.open('pca/' + filename, "wb") as transform:
             pickle.dump(pca, transform)
 
-        # find the best suitable k using cross_validation
-        depth = cross_validation(train_data, train_target)
+        # train the model using MLPClassifier
+        mlp = MLPClassifier(max_iter=100)
 
-        # train the model using DecisionTreeClassifier
-        dt = DecisionTreeClassifier(max_depth=depth)
-
-        parameter_space = { 
-            'criterion': ['gini','entropy'],
-        }
-
-        dt_grid = GridSearchCV(dt, parameter_space, n_jobs=-1, cv=7)
-        model = dt_grid.fit(train_data, train_target)
+        model = mlp.fit(train_data, train_target)
 
         # serialize the model
         with lzma.open('models/' + filename + '.model', "wb") as model_file:
@@ -72,18 +63,19 @@ def main(test):
 
         with lzma.open('models/' + filename + '.model', "rb") as model_file:
             model = pickle.load(model_file)
-            
+
         prediction = model.predict(test_data)
 
         show_results(test_data, test_target, prediction, model, filename)
 
 
 if __name__ == "__main__":
+
     # create a directory for the models
     path = 'models'
     if not os.path.exists(path):
         os.makedirs(path)
-
+    
     # create a directory for the pca
     path = 'pca'
     if not os.path.exists(path):

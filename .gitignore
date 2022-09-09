@@ -1,2 +1,5 @@
 cifar-100-python/
 *.model
+models/
+pca/
+plots/
